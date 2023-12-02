@@ -97,8 +97,41 @@ app.get("/api/users/:_id/logs", async (req, res) => {
   }
 });
 
-app.post("/api/users/:_id/exercises", (req, res) => {
-  console.log(req.body);
+app.post("/api/users/:_id/exercises", async (req, res) => {
+  try {
+    const userId = req.params._id;
+    const currentDate = new Date().toDateString();
+    const { description, duration, date } = req.body;
+
+    const exercise = new Exercise({
+      userid: userId,
+      description: description,
+      duration: duration,
+      date: date ? date : currentDate,
+    });
+
+    const savedExercise = await exercise.save();
+
+    const user = await User.findById({ _id: userId });
+
+    // Merge user data with exercise details
+    const userWithExercise = {
+      _id: user._id,
+      username: user.username,
+      description: savedExercise.description,
+      duration: savedExercise.duration,
+      date: savedExercise.date.toDateString(),
+    };
+
+    res.status(200).json({ user: userWithExercise });
+    console.log("Exercise saved successfully:", { user: userWithExercise });
+  } catch (error) {
+    console.error("Error saving exercise:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* app.post("/api/users/:_id/exercises", (req, res) => {
   let _id = req.params._id;
 
   let date = new Date().toDateString();
@@ -120,7 +153,7 @@ app.post("/api/users/:_id/exercises", (req, res) => {
     .catch((error) => {
       console.error("Error saving user:", error);
     });
-});
+}); */
 app.post("/api/users", (req, res) => {
   let username = req.body.username;
   let user = new User({
